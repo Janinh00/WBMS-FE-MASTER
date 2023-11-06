@@ -10,18 +10,7 @@ import Swal from "sweetalert2";
 import { useConfig, useUser } from "../../../../hooks";
 
 const UserView = () => {
-  // const initialValues = {
-  //   username: "",
-  //   email: "",
-  //   nik: "",
-  //   name: "",
-  //   division: "",
-  //   position: "",
-  //   phone: "",
-  //   role: 0,
 
-  //   isLDAPUser: false,
-  // };
   const userSchema = yup.object().shape({
     username: yup.string().required(),
     email: yup.string().email().required(),
@@ -32,23 +21,23 @@ const UserView = () => {
     role: yup.number().required(),
   });
   const { id } = useParams();
-
+  const [onLoading, setOnLoading] = useState(true);
   const navigate = useNavigate();
 
   const { ROLES } = useConfig();
   const { useSearchFirstUserMutation, useUpdateUserMutation, useDeleteUserMutation } = useUser();
   const [deleteUser] = useDeleteUserMutation();
-  const [searchUserFirst, { isLoadingSearchUser }] = useSearchFirstUserMutation();
-  const [UpdateUser, { isLoading }] = useUpdateUserMutation();
+  const [searchUserFirst, {isLoading} ] = useSearchFirstUserMutation();
+  const [UpdateUser] = useUpdateUserMutation();
 
   const isNonMobile = useMediaQuery("(min-width:600px)");
 
   const [userValues, setUserValues] = useState([]);
   const [dtRoles, setDtRoles] = useState(ROLES);
 
-  const handleFormikSubmit = (values) => {
+  const handleFormikSubmit = async (values, { setSubmitting, resetForm}) => {
     try {
-      UpdateUser(values).then((results) => {
+      await UpdateUser(values).unwrap().then((results) => {
         navigate("/wb/administration/users");
       });
       console.log("values", values);
@@ -90,19 +79,23 @@ const UserView = () => {
       }
     });
   };
-
   useEffect(() => {
     console.log("Fetch user by id:", id);
-
+  
     const data = {
       where: {
         id,
       },
     };
-
+  
     searchUserFirst(data).then((results) => {
       const userData = { ...results.data.data.user };
-      setUserValues(userData); // Memperbarui userValues dengan nilai yang ditemukan
+      
+      // Make sure values.role is set to a valid value
+      userData.role = userData.role || 0;
+      
+      setUserValues(userData); // Update userValues with the fetched data
+      setOnLoading(false);
       console.log("results search user:", userData);
     });
   }, []);
@@ -111,18 +104,7 @@ const UserView = () => {
     <>
       <Box mt={4}>
         <Header title="USER DATA" subtitle="Informasi Detail User" />
-
-        <Formik onSubmit={handleFormikSubmit} initialValues={userValues} >
-          {({ values, errors, touched, handleBlur, handleChange, handleSubmit }) => {
-            return (
-              <form onSubmit={handleSubmit}>
-                <Box display="flex" justifyContent="end">
-                  {/* <Box flex={1}></Box> */}
-
-                  {/* <Button type="submit" variant="contained" sx={{ mb: 1 }}>
-                    Simpan
-                  </Button> */}
-                  {isLoading && (
+        { onLoading ?  (
                     <CircularProgress
                       size={24}
                       sx={{
@@ -133,8 +115,19 @@ const UserView = () => {
                         marginLeft: "-12px",
                       }}
                     />
-                  )}
-                  {/* <Button
+                  ) : userValues && (
+        <Formik onSubmit={handleFormikSubmit} initialValues={userValues} >
+          {({ values, errors, touched, handleBlur, handleChange, handleSubmit }) => {
+            return (
+              <form onSubmit={handleSubmit}>
+                <Box display="flex" justifyContent="end">
+                  {/* <Box flex={1}></Box> */}
+
+                  <Button type="submit" variant="contained" sx={{ mb: 1 }}>
+                    Simpan
+                  </Button>
+                  
+                  <Button
                     variant="contained"
                     sx={{ mb: 1, ml: 0.5 }}
                     onClick={() => {
@@ -142,12 +135,12 @@ const UserView = () => {
                     }}
                   >
                     Di Non-Aktifkan
-                  </Button> */}
-                  {/* <Button variant="contained" sx={{ mb: 1, ml: 0.5 }} onClick={handleDelete}>
+                  </Button>
+                  <Button variant="contained" sx={{ mb: 1, ml: 0.5 }} onClick={handleDelete}>
                     Hapus
-                  </Button> */}
+                  </Button>
                   <Button variant="contained" sx={{ mb: 1, ml: 0.5 }} onClick={handleClose}>
-                    Kembali
+                    Batal
                   </Button>
                 </Box>
                 <Box
@@ -165,13 +158,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.name}
+                    value={values.name}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.name && !!errors.name}
                     helperText={touched.name && errors.name}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
                   <TextField
                     name="nik"
@@ -182,13 +174,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.nik}
+                    value={values.nik}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.nik && !!errors.nik}
                     helperText={touched.nik && errors.nik}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
                   <TextField
                     name="username"
@@ -199,13 +190,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.username}
+                    value={values.username}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.username && !!errors.username}
                     helperText={touched.username && errors.username}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
                   <TextField
                     name="email"
@@ -216,13 +206,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.email}
+                    value={values.email}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.email && !!errors.email}
                     helperText={touched.email && errors.email}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
                   <TextField
                     name="position"
@@ -233,13 +222,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.position}
+                    value={values.position}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.position && !!errors.position}
                     helperText={touched.position && errors.position}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
                   <TextField
                     name="division"
@@ -250,13 +238,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.division}
+                    value={values.division}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.division && !!errors.division}
                     helperText={touched.division && errors.division}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
                   <TextField
                     name="phone"
@@ -266,13 +253,12 @@ const UserView = () => {
                     variant="outlined"
                     size="small"
                     fullWidth
-                    value={userValues.phone}
+                    value={values.phone}
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={!!touched.phone && !!errors.phone}
                     helperText={touched.phone && errors.phone}
                     sx={{ gridColumn: "span 2" }}
-                    disabled
                   />
 
                   <FormControl fullWidth size="small" sx={{ gridColumn: "span 2" }} required>
@@ -281,12 +267,12 @@ const UserView = () => {
                       labelId="role"
                       label="Role"
                       name="role"
-                      value={userValues.role}
+                      value={values.role}
                       onBlur={handleBlur}
                       onChange={handleChange}
                       error={!!touched.role && !!errors.role}
                       helperText={touched.role && errors.role}
-                      disabled
+
                     >
                       {dtRoles &&
                         dtRoles.length > 0 &&
@@ -305,10 +291,12 @@ const UserView = () => {
               </form>
             );
           }}
-        </Formik>
+        </Formik>)}
       </Box>
     </>
   );
 };
 
 export default UserView;
+
+

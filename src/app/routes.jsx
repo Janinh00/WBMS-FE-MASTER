@@ -49,6 +49,8 @@ const MDTransportVehicle = lazy(() => import("../pages/master-data/md-transport-
 const AdmUser = lazy(() => import("../pages/administration/user-management/users"));
 const AdmUserCreate = lazy(() => import("../pages/administration/user-management/users/user-create"));
 const AdmUserView = lazy(() => import("../pages/administration/user-management/users/user-view"));
+const AdmUserEdit = lazy(() => import("../pages/administration/user-management/users/user-edit"));
+
 
 const routes = () => {
   return (
@@ -108,7 +110,9 @@ const routes = () => {
           <Route path="md/transport-vehicles" name="mdTransportVehicle" element={<MDTransportVehicle />} />
           <Route path="administration/users" name="AdmUser" element={<AdmUser />} />
           <Route path="administration/users/add" name="AdmUserCreate" element={<AdmUserCreate />} />
-          <Route path="administration/users/:id" name="AdmUserView" element={<AdmUserView />} />
+          <Route path="administration/users/view/:id" name="AdmUserView" element={<AdmUserView />} />
+          <Route path="administration/users/edit/:id" name="AdmUserEdit" element={<AdmUserEdit />} />
+
 
           <Route path="*" name="Page 404" element={<div>Page 404 Transaksi WB</div>} />
         </Route>

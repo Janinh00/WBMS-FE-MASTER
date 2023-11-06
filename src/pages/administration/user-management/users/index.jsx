@@ -13,9 +13,11 @@ import { RichSelectModule } from "@ag-grid-enterprise/rich-select";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
 import { ModuleRegistry } from "@ag-grid-community/core";
-
+import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import PlagiarismOutlinedIcon from "@mui/icons-material/PlagiarismOutlined";
-
+import ModeEditOutlinedIcon from '@mui/icons-material/ModeEditOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import Header from "../../../../components/layout/signed/Header";
 
 import { useConfig, useUser } from "../../../../hooks";
@@ -25,9 +27,10 @@ ModuleRegistry.registerModules([ClientSideRowModelModule, RangeSelectionModule, 
 const UMUser = () => {
   const navigate = useNavigate();
 
+  const [selectedUsers, setSelectedUsers] = useState();
   const { ROLES } = useConfig();
-  const { useGetUsersQuery } = useUser();
-
+  const { useGetUsersQuery, useDeleteUserMutation } = useUser();
+  const [deleteUser] = useDeleteUserMutation();
   const { data: dataUser, error, refetch } = useGetUsersQuery();
 
   const sourceFormatter = (params) => {
@@ -45,12 +48,55 @@ const UMUser = () => {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         {params.data && (
-          <IconButton size="small" onClick={() => navigate(`/wb/administration/users/${params.data.id}`)}>
+          <IconButton size="small" onClick={() => {
+            navigate(`/wb/administration/users/view/${params.data.id}`);
+            }}>
             <PlagiarismOutlinedIcon />
           </IconButton>
         )}
+                {params.data && (
+          <IconButton size="small" onClick={() => navigate(`/wb/administration/users/edit/${params.data.id}`)}>
+            <ModeEditOutlinedIcon />
+          </IconButton>
+          
+        )}
+          {params.data && (
+          <IconButton size="small" onClick={() => handleDelete(params.value, params.data.name)}>
+            <DeleteOutlinedIcon />
+          </IconButton>
+        )}
+        
       </Box>
     );
+  };
+
+  const handleDelete = (id, name) => {
+    Swal.fire({
+      title: `Yakin Ingin Menghapus?`,
+      html: `<span style="font-weight: bold; font-size: 28px;">"${name}"</span>`,
+      icon: "question",
+      showConfirmButton: true,
+      showCancelButton: true,
+      confirmButtonColor: "#D80B0B",
+      cancelButtonColor: "grey",
+      cancelButtonText: "Cancel",
+      confirmButtonText: "Hapus",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteUser(id)
+          .then((res) => {
+            console.log("Data berhasil dihapus:", res.data);
+            toast.success("Data berhasil dihapus"); // Show success toast
+            navigate("/wb/administration/users");
+            // Handle any additional actions or update the state as needed
+          })
+          .catch((error) => {
+            console.error("Data Gagal dihapus:", error);
+            toast.error("Data Gagal dihapus"); // Show error toast
+            // Handle the error or display an error message
+          });
+      }
+    });
   };
 
   const [columnDefs] = useState([
